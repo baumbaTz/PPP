@@ -4,7 +4,7 @@
 
 # Wanna help?
 If you have Docker or Docker Desktop:
-- Pull the Image from 
+- Pull the Image  
 ```
 baumbatz/ppp-transcriber-gpu
 ```
