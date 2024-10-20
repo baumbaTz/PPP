@@ -1,7 +1,18 @@
 # PPP Podcast Processing Project
 - Automatic Transcription of Podcast Episodes with Faster-Whisper (https://github.com/SYSTRAN/faster-whisper)
-- Backend API to deliver Episodes to transcribe and ingest the results.
+- Backend API delivers Episodes to transcribe and ingests the results.
 
+# Use the Transcriptions for your own fun ideas
+API URL
+```
+http://ppp.wirr.de:5000/
+```
+All API endpoints:
+```
+GET /episodes - List all episodes (with optional status filter: ?status=processed and ?status=unprocessed)
+GET /results/<guid> - Get results for a specific episode
+GET /tallies - List user tallies
+```
 # Wanna help?
 If you have Docker or Docker Desktop:
 - Pull the Image  
