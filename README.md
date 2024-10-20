@@ -26,7 +26,11 @@ http://ppp.wirr.de:5000/
 All API endpoints:
 ```
 GET /episodes - List all episodes (with optional status filter: ?status=processed and ?status=unprocessed)
+```
+```
 GET /results/<guid> - Get results for a specific episode
+```
+```
 GET /tallies - List user tallies
 ```
 # Thanks
