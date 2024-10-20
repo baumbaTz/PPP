@@ -1,0 +1,38 @@
+# Stage 1: Builder
+FROM nvidia/cuda:12.6.1-runtime-ubuntu22.04 AS builder
+
+ENV DEBIAN_FRONTEND=noninteractive
+# Set a specific cache directory for the model
+ENV XDG_CACHE_HOME=/cache
+
+RUN apt-get update && apt-get install -y \
+    python3-pip \
+    libcudnn8=8.9.2.* \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN pip3 install --no-cache-dir torch==2.0.0+cu118 -f https://download.pytorch.org/whl/cu118/torch_stable.html requests numpy==1.24.3 faster-whisper==1.0.3
+
+# Pre-download the large-v2 model for faster-whisper
+RUN python3 -c "from faster_whisper import WhisperModel; WhisperModel('large-v2')"
+
+# Stage 2: Final smaller image
+FROM nvidia/cuda:12.6.1-runtime-ubuntu22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+# Set the same cache directory in the final image
+ENV XDG_CACHE_HOME=/cache
+
+RUN apt-get update && apt-get install -y \
+    python3-pip \
+    libcudnn8=8.9.2.* \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy necessary Python packages and libraries from builder stage
+COPY --from=builder /usr/local /usr/local
+# Copy the model cache from the builder stage
+COPY --from=builder /cache /cache
+
+WORKDIR /app
+COPY . /app
+
+CMD ["python3", "transcribe-me.py"]
