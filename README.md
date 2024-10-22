@@ -6,7 +6,7 @@
 If you have Docker or Docker Desktop:
 - Pull the Image  
 ```
-baumbatz/ppp-transcriber-gpu
+docker pull baumbatz/ppp-transcriber-gpu
 ```
 ```
 https://hub.docker.com/repository/docker/baumbatz/ppp-transcriber-gpu
