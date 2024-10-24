@@ -38,3 +38,22 @@ GET /tallies - List user tallies
 # Thanks
 - trevorlyman for making https://searchtms.com which showed the transcription stuff actually works
 - TaliZorEl for suggesting to create this :)
+# Podcast Feeds currently in the queue
+```
+- Filmsack
+- CORE
+- Play Retro
+- SKIM
+- There Will Be Dungeons
+- The Instance
+- The Monday Show
+- Diary of a Cartoonist
+- Word on the Street
+- BOOP
+
+Non Frogpants Shows
+- GORE
+- Wait, You Haven't Seen...?
+- Those Were The Days
+- Soundography (as soon as i figure out how to make that work)
+```
