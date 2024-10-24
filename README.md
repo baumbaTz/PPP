@@ -15,6 +15,7 @@ https://hub.docker.com/repository/docker/baumbatz/ppp-transcriber-gpu
 ```
 docker run --gpus all -e NICKNAME="yournicknamehere" --name ppp-gpu -v PATH-TO-TEMP-FOLDER-ON-YOUR-MACHINE:/app/output baumbatz/ppp-transcriber-gpu:latest
 ```
+- If you don't have a NVIDIA GPU remove "--gpus all" (i haven't found a easy way to make it work with AMD or Intel GPUs yet)
 - Next start... just start the container
 
 Gotta stop the container? 
