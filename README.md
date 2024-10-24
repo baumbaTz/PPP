@@ -3,7 +3,7 @@
 (https://github.com/SYSTRAN/faster-whisper)
 - Backend API delivers Episodes to transcribe and ingests the results.
 # Wanna help?
-If you have Docker or Docker Desktop:
+You need Docker or Docker Desktop:
 - Pull the Image  
 ```
 docker pull baumbatz/ppp-transcriber-gpu
