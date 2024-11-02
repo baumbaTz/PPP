@@ -5,6 +5,8 @@ import json
 from faster_whisper import WhisperModel
 import logging
 import time
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 
 # Configuration
 API_URL = "http://ppp.wirr.de:5000/episode"  # API endpoint to request an episode
@@ -77,12 +79,59 @@ def request_episode():
     return episode['file_url'], episode['guid'], episode['token'], episode['podcast_name']
 
 def download_episode(episode_url, output_path):
-    logging.info(f"Downloading episode from {episode_url}...")
-    r = requests.get(episode_url, stream=True)
-    with open(output_path, 'wb') as f:
-        for chunk in r.iter_content(chunk_size=8192):
-            f.write(chunk)
-    logging.info(f"Episode downloaded to {output_path}")
+    logging.info(f"Attempting to download episode from {episode_url}...")
+
+    # First, try to download using requests
+    try:
+        r = requests.get(episode_url, stream=True)
+        if r.status_code == 200 and 'audio' in r.headers.get('Content-Type', ''):
+            with open(output_path, 'wb') as f:
+                for chunk in r.iter_content(chunk_size=8192):
+                    f.write(chunk)
+            logging.info(f"Episode downloaded to {output_path}")
+            return True
+        else:
+            logging.warning(f"Failed to download via requests. Status code: {r.status_code}, Content-Type: {r.headers.get('Content-Type')}")
+            return False
+    except Exception as e:
+        logging.error(f"Error during requests download: {e}")
+        return False
+
+def download_with_selenium(episode_url, output_path):
+    logging.info(f"Falling back to headless browser to download episode from {episode_url}...")
+
+    # Set up Selenium with headless Chrome
+    chrome_options = Options()
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    
+    driver = webdriver.Chrome(options=chrome_options)
+
+    try:
+        driver.get(episode_url)
+        time.sleep(5)  # Allow time for JavaScript to load and execute
+        
+        # Locate the audio element and extract the MP3 file URL
+        audio_tag = driver.find_element_by_tag_name("audio")
+        mp3_url = audio_tag.get_attribute("src")
+        
+        if mp3_url:
+            logging.info(f"MP3 file found at {mp3_url}, downloading...")
+            r = requests.get(mp3_url, stream=True)
+            with open(output_path, 'wb') as f:
+                for chunk in r.iter_content(chunk_size=8192):
+                    f.write(chunk)
+            logging.info(f"Episode downloaded to {output_path}")
+            return True
+        else:
+            logging.error("No MP3 file found in the audio tag.")
+            return False
+    except Exception as e:
+        logging.error(f"Error during Selenium download: {e}")
+        return False
+    finally:
+        driver.quit()
 
 def process_audio(audio_file):
     logging.info(f"Processing audio file {audio_file} with Whisper model...")
@@ -100,7 +149,6 @@ def process_audio(audio_file):
             logging.info(f"Deleted invalid file {audio_file}")
         # Return None to signal that processing failed
         return None
-
 
 def generate_output(segments, guid):
     logging.info(f"Generating TXT, JSON, and SRT outputs for episode with GUID {guid}...")
@@ -157,17 +205,35 @@ def send_results(txt_path, json_path, srt_path, guid, episode_token, processed_c
             'srt_data': open(srt_path).read()
         },
         'nickname': nickname,
-        'podcast_name': podcast_name  # Ensure podcast_name is sent
+        'podcast_name': podcast_name
     }
-    logging.info(f"Sending nickname: {nickname}, podcast_name: {podcast_name}")  # Log nickname and podcast name
+    logging.info(f"Sending nickname: {nickname}, podcast_name: {podcast_name}")
 
-    response = requests.post(UPLOAD_URL, json=result_data)
-    if response.status_code == 200:
-        processed_count += 1
-        logging.info(f"Results for episode with GUID {guid} successfully uploaded. Total successful uploads: {processed_count}")
-    else:
-        failed_count += 1
-        logging.error(f"Failed to upload results for episode with GUID {guid}. Status code: {response.status_code}. Total failed uploads: {failed_count}")
+    max_retries = 5
+    retry_count = 0
+    
+    while retry_count < max_retries:
+        try:
+            response = requests.post(UPLOAD_URL, json=result_data)
+            if response.status_code == 200:
+                processed_count += 1
+                logging.info(f"Results for episode with GUID {guid} successfully uploaded. Total successful uploads: {processed_count}")
+                return processed_count, failed_count
+            else:
+                logging.warning(f"Attempt {retry_count + 1}/{max_retries}: Failed to upload results. Status code: {response.status_code}")
+        except requests.exceptions.ConnectionError as e:
+            logging.warning(f"Attempt {retry_count + 1}/{max_retries}: Connection error occurred: {str(e)}")
+        except Exception as e:
+            logging.warning(f"Attempt {retry_count + 1}/{max_retries}: Unexpected error occurred: {str(e)}")
+        
+        if retry_count < max_retries - 1:  # Don't sleep after the last attempt
+            logging.info(f"Waiting 60 seconds before retry {retry_count + 2}...")
+            time.sleep(60)
+        retry_count += 1
+    
+    # If we get here, all retries failed
+    failed_count += 1
+    logging.error(f"Failed to upload results for episode with GUID {guid} after {max_retries} attempts. Total failed uploads: {failed_count}")
     return processed_count, failed_count
 
 def cleanup_files(files):
@@ -176,7 +242,7 @@ def cleanup_files(files):
         if os.path.exists(file):
             os.remove(file)
             logging.info(f"Deleted file: {file}")
-
+            
 def process_episode():
     processed_count = 0  # Track successful uploads
     failed_count = 0  # Track failed uploads
@@ -191,9 +257,13 @@ def process_episode():
         
         episode_file = f"episode_{guid}.mp3"
         
-        # Download the episode
-        download_episode(episode_url, episode_file)
-        
+        # Try downloading the episode via requests first
+        if not download_episode(episode_url, episode_file):
+            # If requests fails, try using Selenium to download the file
+            if not download_with_selenium(episode_url, episode_file):
+                logging.info(f"Skipping episode {guid} due to download failure.")
+                continue  # Skip to the next episode
+
         # Process the MP3 audio file directly
         segments = process_audio(episode_file)
         if segments is None:
@@ -217,7 +287,6 @@ def process_episode():
         # Output total successful and failed uploads
         logging.info(f"Finished processing episode with GUID {guid}, moving to next...\n")
         logging.info(f"Total successful uploads: {processed_count}, Total failed uploads: {failed_count}")
-
 
 if __name__ == "__main__":
     process_episode()
