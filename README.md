@@ -19,7 +19,7 @@ docker run --gpus all -e NICKNAME="yournicknamehere" --name ppp-gpu -v PATH-TO-T
 - Next start... just start the container
 
 Gotta stop the container? 
-- No Problem. If your container doesn't deliver the results within 6 hours of the request it will be reassigned to the next person. :)
+- No Problem. If your container doesn't deliver the results within 12 hours of the request it will be reassigned to the next person. :)
 # Use the Transcriptions for your own fun ideas
 API URL
 ```
