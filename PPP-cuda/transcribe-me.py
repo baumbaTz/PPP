@@ -100,11 +100,23 @@ def request_episode():
 def download_episode(episode_url, output_path):
     max_retries = 10
     retry_count = 0
-    
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    }
+
     while retry_count < max_retries:
         logging.info(f"Attempting to download episode from {episode_url}...")
         try:
-            r = requests.get(episode_url, stream=True)
+            # Send request with headers
+            r = requests.get(episode_url, headers=headers, stream=True, allow_redirects=True)
+            # Follow redirects manually if required
+            if r.status_code in [301, 302]:
+                redirected_url = r.headers.get('Location')
+                if redirected_url:
+                    logging.info(f"Redirected to {redirected_url}")
+                    r = requests.get(redirected_url, headers=headers, stream=True)
+
+            # Check if content is audio and status code is OK
             if r.status_code == 200 and 'audio' in r.headers.get('Content-Type', ''):
                 with open(output_path, 'wb') as f:
                     for chunk in r.iter_content(chunk_size=8192):
@@ -113,16 +125,18 @@ def download_episode(episode_url, output_path):
                 return True
             else:
                 logging.warning(f"Attempt {retry_count + 1}/{max_retries}: Download failed. Status code: {r.status_code}, Content-Type: {r.headers.get('Content-Type')}")
+
         except Exception as e:
             logging.error(f"Attempt {retry_count + 1}/{max_retries}: Error during download: {e}")
-        
+
         if retry_count < max_retries - 1:
             logging.info(f"Waiting 60 seconds before retry {retry_count + 2}...")
             time.sleep(60)
         retry_count += 1
-    
+
     logging.error("Failed to download episode after maximum retries.")
     return False
+
 
 def execute(cmd):
     popen = subprocess.Popen(cmd, stdout=subprocess.PIPE, universal_newlines=True)
