@@ -56,5 +56,7 @@ Non Frogpants Shows
 - Wait, You Haven't Seen...?
 - Those Were The Days
 - All Around Science
+- The Gamers' Inn
+- Cheapseat Reviews
 - Soundography (as soon as i figure out how to make that work)
 ```
