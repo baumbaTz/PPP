@@ -5,14 +5,14 @@
 You need Docker or Docker Desktop:
 - Pull the Image  
 ```
-docker pull baumbatz/ppp-transcriber-gpu
+docker pull baumbatz/ppp-transcriber-cuda
 ```
 ```
-https://hub.docker.com/repository/docker/baumbatz/ppp-transcriber-gpu
+https://hub.docker.com/repository/docker/baumbatz/ppp-transcriber-cuda
 ```
 - First Start (replace with your nickname [for stats] and your path [for temp files]
 ```
-docker run --gpus all -e NICKNAME="yournicknamehere" --name ppp-gpu -v PATH-TO-TEMP-FOLDER-ON-YOUR-MACHINE:/app/output baumbatz/ppp-transcriber-gpu:latest
+docker run --gpus all -e NICKNAME="your-nickname" --name ppp-cpp -v path-to-temp-folder:/app/output baumbatz/ppp-transcriber-cuda:latest
 ```
 - If you don't have a NVIDIA GPU remove "--gpus all" (i haven't found a easy way to make it work with AMD or Intel GPUs yet)
 - Next start... just start the container
@@ -37,6 +37,7 @@ GET /tallies - List user tallies
 # Thanks
 - trevorlyman for making https://searchtms.com which showed the transcription stuff actually works
 - TaliZorEl for suggesting to create this :)
+- Crutlefish for helping with making it better and working on the Apple Silicon version of this
 # Podcast Feeds currently in the queue
 ```
 - Filmsack
