@@ -2,10 +2,13 @@
 docker build -f Dockerfile.cuda -t baumbatz/ppp-transcriber-cuda:latest .t
 docker run --gpus all -e NICKNAME="your-nickname" --name ppp-cpp -v path-to-temp-folder:/app/output baumbatz/ppp-transcriber-cuda:latest
 
+---------------------
+NOT YET
+---------------------
 # VULKAN (AMD GPU, Intel ARC GPU)
 docker build -f Dockerfile.vulkan -t baumbatz/ppp-transcriber-vulkan:latest .
-docker run --device=/dev/kfd --device=/dev/dri baumbatz/ppp-transcriber-vulkan:latest
+docker run --device=/dev/kfd --device=/dev/dri -e NICKNAME="your-nickname" --name ppp-cpp -v path-to-temp-folder:/app/output baumbatz/ppp-transcriber-vulkan:latest
 
 # Apple Silicon (CPU only)
 docker build -f Dockerfile.apple -t baumbatz/ppp-transcriber-apple:latest .
-docker run baumbatz/ppp-transcriber-apple:latest
+docker run  -e NICKNAME="your-nickname" --name ppp-cpp -v path-to-temp-folder:/app/output baumbatz/ppp-transcriber-apple:latest
