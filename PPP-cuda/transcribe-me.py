@@ -8,7 +8,7 @@ import time
 API_URL = "http://ppp.wirr.de:5000/episode"
 UPLOAD_URL = "http://ppp.wirr.de:5000/results"
 LOG_FILE = "output/podcast_transcriber.log"
-MODEL_DIR = "runtime/whisper_cpp/models"
+MODEL_DIR = "/app/models"
 MODEL_NAME = "ggml-large-v3-turbo.bin"
 MODEL_PATH = os.path.join(MODEL_DIR, MODEL_NAME)
 MODEL_URL = f"https://huggingface.co/ggerganov/whisper.cpp/resolve/main/{MODEL_NAME}"
@@ -61,48 +61,68 @@ def download_model():
 download_model()
 
 def request_episode():
-    logging.info("Requesting a new episode from the API...")
-    response = requests.get(API_URL)
-    if response.status_code == 404:
-        logging.info("No unprocessed episodes available. Retrying in 10 minutes...")
-        time.sleep(600)  # Wait for 10 minutes before retrying
-        return None, None, None, None
-    elif response.status_code != 200:
-        logging.error(f"Error fetching episode. Status code: {response.status_code}")
-        return None, None, None, None
-    episode = response.json()
+    max_retries = 10
+    retry_count = 0
     
-    # Log the entire received episode data as a block
-    logging.info(f"Received episode data:\n"
-                 f"-------------------------\n"
-                 f"GUID: {episode['guid']}\n"
-                 f"Podcast Name: {episode['podcast_name']}\n"
-                 f"Episode Title: {episode['episode_title']}\n"
-                 f"File URL: {episode['file_url']}\n"
-                 f"Token: {episode['token']}\n"
-                 f"Token Created At: {episode['token_created_at']}\n"
-                 f"-------------------------")
+    while retry_count < max_retries:
+        logging.info("Requesting a new episode from the API...")
+        response = requests.get(API_URL)
+        if response.status_code == 404:
+            logging.info("No unprocessed episodes available. Retrying in 10 minutes...")
+            time.sleep(600)  # Wait for 10 minutes before retrying
+            return None, None, None, None
+        elif response.status_code == 200:
+            episode = response.json()
+            
+            # Log the entire received episode data as a block
+            logging.info(f"Received episode data:\n"
+                         f"-------------------------\n"
+                         f"GUID: {episode['guid']}\n"
+                         f"Podcast Name: {episode['podcast_name']}\n"
+                         f"Episode Title: {episode['episode_title']}\n"
+                         f"File URL: {episode['file_url']}\n"
+                         f"Token: {episode['token']}\n"
+                         f"Token Created At: {episode['token_created_at']}\n"
+                         f"-------------------------")
+            
+            return episode['file_url'], episode['guid'], episode['token'], episode['podcast_name']
+        else:
+            logging.warning(f"Attempt {retry_count + 1}/{max_retries}: Error fetching episode. Status code: {response.status_code}")
+        
+        if retry_count < max_retries - 1:
+            logging.info(f"Waiting 60 seconds before retry {retry_count + 2}...")
+            time.sleep(60)
+        retry_count += 1
     
-    return episode['file_url'], episode['guid'], episode['token'], episode['podcast_name']
+    logging.error("Failed to fetch episode after maximum retries.")
+    return None, None, None, None
 
 def download_episode(episode_url, output_path):
-    logging.info(f"Attempting to download episode from {episode_url}...")
-
-    try:
-        r = requests.get(episode_url, stream=True)
-        if r.status_code == 200 and 'audio' in r.headers.get('Content-Type', ''):
-            with open(output_path, 'wb') as f:
-                for chunk in r.iter_content(chunk_size=8192):
-                    f.write(chunk)
-            logging.info(f"Episode downloaded to {output_path}")
-            return True
-        else:
-            logging.warning(f"Download failed. Status code: {r.status_code}, Content-Type: {r.headers.get('Content-Type')}")
-            return False
-    except Exception as e:
-        logging.error(f"Error during download: {e}")
-        return False
-
+    max_retries = 10
+    retry_count = 0
+    
+    while retry_count < max_retries:
+        logging.info(f"Attempting to download episode from {episode_url}...")
+        try:
+            r = requests.get(episode_url, stream=True)
+            if r.status_code == 200 and 'audio' in r.headers.get('Content-Type', ''):
+                with open(output_path, 'wb') as f:
+                    for chunk in r.iter_content(chunk_size=8192):
+                        f.write(chunk)
+                logging.info(f"Episode downloaded to {output_path}")
+                return True
+            else:
+                logging.warning(f"Attempt {retry_count + 1}/{max_retries}: Download failed. Status code: {r.status_code}, Content-Type: {r.headers.get('Content-Type')}")
+        except Exception as e:
+            logging.error(f"Attempt {retry_count + 1}/{max_retries}: Error during download: {e}")
+        
+        if retry_count < max_retries - 1:
+            logging.info(f"Waiting 60 seconds before retry {retry_count + 2}...")
+            time.sleep(60)
+        retry_count += 1
+    
+    logging.error("Failed to download episode after maximum retries.")
+    return False
 
 def execute(cmd):
     popen = subprocess.Popen(cmd, stdout=subprocess.PIPE, universal_newlines=True)
@@ -147,7 +167,7 @@ def send_results(txt_path, json_path, srt_path, guid, episode_token, processed_c
     }
     logging.info(f"Sending nickname: {nickname}, podcast_name: {podcast_name}")
 
-    max_retries = 5
+    max_retries = 10
     retry_count = 0
     
     while retry_count < max_retries:
