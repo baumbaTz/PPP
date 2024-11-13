@@ -1,6 +1,6 @@
 # NVIDIA GPU
-docker build -f Dockerfile.cuda -t baumbatz/ppp-transcriber-cuda:latest .
-docker run --gpus all -e NICKNAME="baumbatz" --name ppp-cpp  baumbatz/ppp-transcriber-cuda:latest
+docker build -f Dockerfile.cuda -t baumbatz/ppp-transcriber-cuda:latest .t
+docker run --gpus all -e NICKNAME="your-nickname" --name ppp-cpp -v path-to-temp-folder:/app/output baumbatz/ppp-transcriber-cuda:latest
 
 # VULKAN (AMD GPU, Intel ARC GPU)
 docker build -f Dockerfile.vulkan -t baumbatz/ppp-transcriber-vulkan:latest .
