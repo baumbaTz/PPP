@@ -3,6 +3,7 @@ import subprocess
 import requests
 import logging
 import time
+import re
 
 # Configuration
 API_URL = "http://ppp.wirr.de:5000/episode"
@@ -96,6 +97,10 @@ def request_episode():
     
     logging.error("Failed to fetch episode after maximum retries.")
     return None, None, None, None
+
+def sanitize_filename(filename):
+    # Replace any character that is not a letter, digit, or underscore with an underscore
+    return re.sub(r'[<>:"/\\|?*]', '_', filename)
 
 def download_episode(episode_url, output_path):
     max_retries = 10
@@ -210,8 +215,9 @@ def process_episode():
         episode_url, guid, episode_token, podcast_name = request_episode()
         if not episode_url:
             continue
-
-        episode_file = f"output/episode_{guid}.mp3"
+        # Generate a sanitized filename for the episode
+        sanitized_guid = sanitize_filename(guid)
+        episode_file = f"output/episode_{sanitized_guid}.mp3"
 
         if not download_episode(episode_url, episode_file):
             logging.info(f"Skipping episode {guid} due to download failure.")
