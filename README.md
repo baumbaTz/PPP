@@ -1,6 +1,5 @@
 # PPP Podcast Processing Project
-- Automatic Transcription of Frogpants Podcast Episodes with Faster-Whisper 
-(https://github.com/SYSTRAN/faster-whisper)
+- Automatic Transcription of Frogpants Podcast Episodes (using Faster-Whisper or Whisper.cpp)
 - Backend API delivers Episodes to transcribe and ingests the results.
 # Wanna help?
 You need Docker or Docker Desktop:
