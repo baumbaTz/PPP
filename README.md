@@ -35,9 +35,9 @@ GET /results/<guid> - Get results for a specific episode
 GET /tallies - List user tallies
 ```
 # Thanks
-- trevorlyman for making https://searchtms.com which showed the transcription stuff actually works
+- trevorlyman for making https://searchtms.com which showed the transcription stuff actually works and explaining how it works
 - TaliZorEl for suggesting to create this :)
-- Crutlefish for helping with making it better and working on the Apple Silicon version of this
+- crutlefish for helping with making it better and working on the Apple Silicon version of this
 # Podcast Feeds currently in the queue
 ```
 - Filmsack
