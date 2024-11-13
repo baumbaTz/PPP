@@ -1,0 +1,11 @@
+# NVIDIA GPU
+docker build -f Dockerfile.cuda -t baumbatz/ppp-transcriber-cuda:latest .
+docker run --gpus all -e NICKNAME="baumbatz" --name ppp-cpp  baumbatz/ppp-transcriber-cuda:latest
+
+# VULKAN (AMD GPU, Intel ARC GPU)
+docker build -f Dockerfile.vulkan -t baumbatz/ppp-transcriber-vulkan:latest .
+docker run --device=/dev/kfd --device=/dev/dri baumbatz/ppp-transcriber-vulkan:latest
+
+# Apple Silicon (CPU only)
+docker build -f Dockerfile.apple -t baumbatz/ppp-transcriber-apple:latest .
+docker run baumbatz/ppp-transcriber-apple:latest
